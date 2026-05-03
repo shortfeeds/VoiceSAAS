@@ -48,6 +48,7 @@ model Client {
   apiKeys       ApiKey[]
   bookings      Booking[]
   didNumbers    DidPool[]
+  user          User?
 
   @@map("clients")
 }
@@ -171,4 +172,18 @@ model Booking {
   call          Call?    @relation(fields: [callId], references: [id])
 
   @@map("bookings")
+}
+
+// ── Users (Auth) ───────────────────────────────────────────────────────────
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  password  String
+  role      String   @default("client") // "admin" | "client"
+  clientId  String?  @map("client_id") @db.Uuid @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  client    Client?  @relation(fields: [clientId], references: [id])
+
+  @@map("users")
 }

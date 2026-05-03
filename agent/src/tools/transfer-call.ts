@@ -1,5 +1,6 @@
 import { llm } from "@livekit/agents";
 import { z } from "zod";
+import { SipClient } from "livekit-server-sdk";
 
 /**
  * Tool definition for call transfer.
@@ -22,10 +23,38 @@ export const transferCallTool = llm.tool({
       `[Transfer] Transferring call for tenant ${tenantId} to ${transferNumber} — Reason: ${params.reason}`
     );
 
-    // TODO: Implement actual SIP transfer via LiveKit API
-    // Actually, in v1.x, you might need to use the room or participant object
-    // but for now we just return the confirmation message.
+    try {
+      // 1. Identify the SIP participant (the caller)
+      // We look for participants whose identity starts with 'sip_' or who have 'sip' metadata
+      const sipParticipant = Array.from(ctx.room.remoteParticipants.values()).find(
+        (p) => p.identity.startsWith("sip") || p.kind === 2 // SIP participant kind is usually 2 in RTC
+      );
 
-    return "Let me connect you with our team right away. Please hold for a moment.";
+      if (!sipParticipant) {
+        console.error("[Transfer] No SIP participant found in the room to transfer.");
+        return "I'm sorry, I'm having trouble connecting you to our team right now. Is there anything else I can help you with?";
+      }
+
+      // 2. Initialize SIP client
+      const sipClient = new SipClient(
+        process.env.LIVEKIT_URL!.replace("wss://", "https://"),
+        process.env.LIVEKIT_API_KEY!,
+        process.env.LIVEKIT_API_SECRET!
+      );
+
+      // 3. Trigger the transfer (SIP REFER)
+      await sipClient.transferSIPParticipant(
+        ctx.room.name,
+        sipParticipant.identity,
+        transferNumber
+      );
+
+      console.log(`[Transfer] Successfully initiated transfer for ${sipParticipant.identity}`);
+
+      return "Connecting you to our team now. Please stay on the line.";
+    } catch (error) {
+      console.error("[Transfer] Error during SIP transfer:", error);
+      return "I'm trying to connect you to a human agent, but I encountered a technical issue. Please try calling back in a few minutes.";
+    }
   },
 });
