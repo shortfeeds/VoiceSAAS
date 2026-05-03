@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Plans ───────────────────────────────────────────────────────────────────
+model Plan {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @unique
+  displayName   String   @map("display_name")
+  minutesLimit  Int      @map("minutes_limit")
+  price         Decimal  @db.Decimal(10, 2)
+  currency      String   @default("INR")
+  features      Json     @default("[]")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  clients       Client[]
+
+  @@map("plans")
+}
+
+// ── Clients (Tenants) ───────────────────────────────────────────────────────
+model Client {
+  id            String        @id @default(uuid()) @db.Uuid
+  ownerId       String?       @map("owner_id") @db.Uuid
+  name          String
+  email         String        @unique
+  phoneNumber   String?       @map("phone_number")
+  planId        String?       @map("plan_id") @db.Uuid
+  sttProvider   String        @default("sarvam") @map("stt_provider")
+  ttsProvider   String        @default("sarvam") @map("tts_provider")
+  llmProvider   String        @default("groq") @map("llm_provider")
+  status        String        @default("active")
+  razorpaySubId String?       @map("razorpay_sub_id")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  plan          Plan?         @relation(fields: [planId], references: [id])
+  agentConfig   AgentConfig?
+  calls         Call[]
+  usage         Usage[]
+  apiKeys       ApiKey[]
+  bookings      Booking[]
+  didNumbers    DidPool[]
+
+  @@map("clients")
+}
+
+// ── Agent Configs ───────────────────────────────────────────────────────────
+model AgentConfig {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @unique @map("client_id") @db.Uuid
+  agentName       String   @default("Receptionist") @map("agent_name")
+  firstLine       String?  @map("first_line")
+  instructions    String?
+  voice           String   @default("kavya")
+  language        String   @default("hi-IN")
+  sttLanguage     String   @default("unknown") @map("stt_language")
+  faqEntries      Json     @default("[]") @map("faq_entries")
+  servicesList    String?  @map("services_list")
+  transferNumber  String?  @map("transfer_number")
+  maxTurns        Int      @default(25) @map("max_turns")
+  businessHours   Json?    @map("business_hours")
+  bookingEnabled  Boolean  @default(false) @map("booking_enabled")
+  calApiKey       String?  @map("cal_api_key")
+  calEventType    String?  @map("cal_event_type")
+  webhookUrl      String?  @map("webhook_url")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("agent_configs")
+}
+
+// ── DID Number Pool ─────────────────────────────────────────────────────────
+model DidPool {
+  id           String   @id @default(uuid()) @db.Uuid
+  phoneNumber  String   @unique @map("phone_number")
+  provider     String   @default("plivo")
+  region       String?
+  monthlyCost  Decimal  @default(299.00) @map("monthly_cost") @db.Decimal(8, 2)
+  assignedTo   String?  @map("assigned_to") @db.Uuid
+  sipTrunkId   String?  @map("sip_trunk_id")
+  status       String   @default("available")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  client       Client?  @relation(fields: [assignedTo], references: [id])
+
+  @@map("did_pool")
+}
+
+// ── Calls ───────────────────────────────────────────────────────────────────
+model Call {
+  id             String    @id @default(uuid()) @db.Uuid
+  clientId       String    @map("client_id") @db.Uuid
+  callerNumber   String?   @map("caller_number")
+  callerName     String?   @map("caller_name")
+  duration       Int       @default(0)
+  turns          Int       @default(0)
+  transcript     String?
+  summary        String?
+  audioUrl       String?   @map("audio_url")
+  recordingUrl   String?   @map("recording_url")
+  status         String    @default("completed")
+  sentiment      String?
+  wasBooked      Boolean   @default(false) @map("was_booked")
+  wasTransferred Boolean   @default(false) @map("was_transferred")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  bookings       Booking[]
+
+  @@index([clientId])
+  @@index([createdAt(sort: Desc)])
+  @@map("calls")
+}
+
+// ── Usage Tracking ──────────────────────────────────────────────────────────
+model Usage {
+  id               String   @id @default(uuid()) @db.Uuid
+  clientId         String   @map("client_id") @db.Uuid
+  month            String
+  totalCalls       Int      @default(0) @map("total_calls")
+  minutesUsed      Decimal  @default(0) @map("minutes_used") @db.Decimal(10, 2)
+  minutesRemaining Decimal? @map("minutes_remaining") @db.Decimal(10, 2)
+  overageCalls     Int      @default(0) @map("overage_calls")
+  overageCharge    Decimal  @default(0) @map("overage_charge") @db.Decimal(10, 2)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, month])
+  @@map("usage")
+}
+
+// ── API Keys ────────────────────────────────────────────────────────────────
+model ApiKey {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @map("client_id") @db.Uuid
+  provider        String
+  apiKeyEncrypted String   @map("api_key_encrypted")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, provider])
+  @@map("api_keys")
+}
+
+// ── Bookings ────────────────────────────────────────────────────────────────
+model Booking {
+  id            String   @id @default(uuid()) @db.Uuid
+  clientId      String   @map("client_id") @db.Uuid
+  callId        String?  @map("call_id") @db.Uuid
+  callerName    String?  @map("caller_name")
+  callerPhone   String?  @map("caller_phone")
+  callerEmail   String?  @map("caller_email")
+  preferredDate String?  @map("preferred_date")
+  purpose       String?
+  status        String   @default("pending")
+  calBookingId  String?  @map("cal_booking_id")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  call          Call?    @relation(fields: [callId], references: [id])
+
+  @@map("bookings")
+}
