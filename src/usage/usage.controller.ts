@@ -8,7 +8,7 @@ export class UsageController {
 
   @UseGuards(JwtAuthGuard)
   @Get('current')
-  async getCurrentUsage(@Request() req) {
+  async getCurrentUsage(@Request() req: any) {
     const clientId = req.user?.clientId || 'mock-client-id';
     return this.usageService.getUsage(clientId);
   }
