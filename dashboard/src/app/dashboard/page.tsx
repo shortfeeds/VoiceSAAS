@@ -27,8 +27,23 @@ export default function DashboardPage() {
           api.get('/usage/current').catch(() => ({ data: stats })),
           api.get('/calls').catch(() => ({ data: calls }))
         ]);
-        // setStats(statsRes.data);
-        // setCalls(callsRes.data);
+        if (statsRes.data) {
+          setStats({
+            totalCalls: statsRes.data.totalCalls || 0,
+            minutesUsed: Math.round(statsRes.data.minutesUsed || 0),
+            activeAgents: 1, // Mocked for now until agent stats endpoint is built
+            bookings: statsRes.data.bookings || 0
+          });
+        }
+        if (callsRes.data && Array.isArray(callsRes.data)) {
+          setCalls(callsRes.data.map((c: any) => ({
+            id: c.id,
+            number: c.callerNumber || 'Unknown',
+            duration: `${Math.round(c.duration / 60)}m ${c.duration % 60}s`,
+            status: c.status,
+            time: new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          })));
+        }
       } catch (err) {
         console.warn('Backend currently unreachable, using mock data');
       }

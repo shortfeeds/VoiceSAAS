@@ -1,13 +1,14 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api',
 });
 
 // Add a request interceptor to add the auth token
-api.interceptors.request.use((config) => {
+api.interceptors.request.use((config: any) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   if (token) {
+    if (!config.headers) config.headers = {};
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

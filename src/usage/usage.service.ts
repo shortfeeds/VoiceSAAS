@@ -7,14 +7,19 @@ export class UsageService {
 
   async getUsage(clientId: string, month?: string) {
     const targetMonth = month || new Date().toISOString().slice(0, 7);
-    return this.prisma.usage.findUnique({
-      where: {
-        clientId_month: {
-          clientId,
-          month: targetMonth,
+    try {
+      return await this.prisma.usage.findUnique({
+        where: {
+          clientId_month: {
+            clientId,
+            month: targetMonth,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.warn(`[UsageService] Database unreachable: ${error.message}`);
+      return { totalCalls: 0, minutesUsed: 0, minutesRemaining: 1000 };
+    }
   }
 
   async trackCall(clientId: string, durationSeconds: number) {

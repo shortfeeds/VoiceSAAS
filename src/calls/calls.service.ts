@@ -36,4 +36,15 @@ export class CallsService {
     }
   }
 
+  async getCalls() {
+    try {
+      return await this.prisma.call.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      });
+    } catch (error) {
+      console.warn(`[CallsService] Failed to get calls: ${error.message}`);
+      return [];
+    }
+  }
 }
