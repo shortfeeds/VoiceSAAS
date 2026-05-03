@@ -1,3 +1,4 @@
+import Link from "next/link";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -11,7 +12,7 @@ export default function Home() {
         <div className={styles.navLinks}>
           <a href="#features">Features</a>
           <a href="#pricing">Pricing</a>
-          <button className="btn-primary">Get Started</button>
+          <Link href="/login" className="btn-primary">Get Started</Link>
         </div>
       </nav>
 
