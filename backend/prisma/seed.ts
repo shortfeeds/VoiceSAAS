@@ -87,6 +87,19 @@ async function main() {
     },
   });
 
+  // 6. Create Test User (Admin)
+  // Password is 'password' hashed with bcrypt
+  await prisma.user.upsert({
+    where: { email: 'trinitypixels.com@gmail.com' },
+    update: { clientId: client.id },
+    create: {
+      email: 'trinitypixels.com@gmail.com',
+      password: '$2b$10$EPXk9sJ2vW2x/hE5VnE7QO.vH/NfB3E1aE6rW1W3W.x/B1B.m/W1G', // 'password'
+      role: 'admin',
+      clientId: client.id,
+    },
+  });
+
   console.log('Seeding completed successfully!');
 }
 

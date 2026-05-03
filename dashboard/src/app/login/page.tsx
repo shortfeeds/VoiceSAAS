@@ -15,12 +15,26 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Mock login for now
-    setTimeout(() => {
-      localStorage.setItem('token', 'mock-token');
-      router.push('/dashboard');
+    try {
+      const response = await fetch('http://localhost:4000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.access_token);
+        router.push('/dashboard');
+      } else {
+        alert('Invalid email or password');
+      }
+    } catch (err) {
+      console.error('Login error', err);
+      alert('Failed to connect to authentication server.');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (

@@ -1,5 +1,6 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
 import { CallsService } from './calls.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('api/calls')
 export class CallsController {
@@ -10,6 +11,7 @@ export class CallsController {
     return this.callsService.logCall(data);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   async getCalls() {
     return this.callsService.getCalls();
