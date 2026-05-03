@@ -11,6 +11,7 @@ import { UsageModule } from './usage/usage.module';
 import { PlansModule } from './plans/plans.module';
 import { ProvisioningModule } from './provisioning/provisioning.module';
 import { BillingModule } from './billing/billing.module';
+import { BookingsModule } from './bookings/bookings.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { BillingModule } from './billing/billing.module';
     PlansModule,
     ProvisioningModule,
     BillingModule,
+    BookingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

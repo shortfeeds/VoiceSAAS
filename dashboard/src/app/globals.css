@@ -60,6 +60,22 @@ h1, h2, h3, h4 {
   box-shadow: 0 0 30px var(--accent-glow);
 }
 
+.btn-secondary {
+  background: transparent;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 99px;
+  font-weight: 600;
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 .hero-glow {
   position: absolute;
   top: -10%;

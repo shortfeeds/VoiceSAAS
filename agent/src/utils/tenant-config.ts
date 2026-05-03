@@ -134,6 +134,16 @@ export function buildSystemPrompt(config: TenantConfig): string {
   prompt += `\n- Business Name: ${config.businessName}`;
   prompt += `\n- Your Name: ${config.agentName}`;
   prompt += `\n- Transfer Number: ${config.transferNumber}`;
+  
+  // Inject Current Time and Date
+  const currentDateTime = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+  prompt += `\n- Current Time in India: ${currentDateTime}`;
+
+  // Inject Business Hours
+  if (config.businessHours) {
+    prompt += `\n- Business Hours: ${JSON.stringify(config.businessHours)}`;
+    prompt += `\nIf the current time is outside business hours, inform the caller that the business is closed, and you will note down their message or they can call back later. Do not transfer calls if the business is closed.`;
+  }
 
   return prompt;
 }
